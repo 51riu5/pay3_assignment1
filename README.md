@@ -65,7 +65,7 @@ npm run preview
 
 ## Deployment
 
-This app can be deployed to Vercel, Netlify, or GitHub Pages.
+This app is deployed to Vercel
 
 ### Vercel (recommended)
 
@@ -74,10 +74,5 @@ This app can be deployed to Vercel, Netlify, or GitHub Pages.
 3. Build command: `npm run build`
 4. Output directory: `dist`
 
-### Netlify
 
-1. Connect repository.
-2. Build command: `npm run build`
-3. Publish directory: `dist`
-
-> Add your deployed URL to this README once deployed.
+> Deployment URL: https://pay3-a0h6khzyr-rishits-projects-95675e60.vercel.app/
