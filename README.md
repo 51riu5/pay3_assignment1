@@ -5,7 +5,7 @@ A placement-ready frontend project that recreates a Figma crypto dashboard with 
 ## Live Links
 
 - **Deployed App:** `https://pay3-a0h6khzyr-rishits-projects-95675e60.vercel.app/`
-- **Repository:** `https://github.com/51riu5/pay3_assignment1`
+- **Repository:** `https://pay3-mauve.vercel.app/`
 
 ## Why This Stands Out
 
