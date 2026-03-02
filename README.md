@@ -1,7 +1,6 @@
 # Crypto Market Overview
 
-A placement-ready frontend project that recreates a Figma crypto dashboard with live market data, fast interactions, and persistent personalization using plain TypeScript and CSS.
-
+A TypeScript-based crypto dashboard that recreates a Figma design using vanilla DOM APIs and custom CSS, powered by live market data from CoinGecko.
 ## Live Links
 
 - **Deployed App:** `https://pay3-a0h6khzyr-rishits-projects-95675e60.vercel.app/`
