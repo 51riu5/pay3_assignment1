@@ -1,9 +1,10 @@
 # Crypto Market Overview
 
-A TypeScript-based crypto dashboard that recreates a Figma design using vanilla DOM APIs and custom CSS, powered by live market data from CoinGecko.
+A placement-ready frontend project that recreates a Figma crypto dashboard with live market data, fast interactions, and persistent personalization using plain TypeScript and CSS.
+
 ## Live Links
 
-- **Deployed App:** `https://pay3-mauve.vercel.app/`
+- **Deployed App:** `https://pay3-a0h6khzyr-rishits-projects-95675e60.vercel.app/`
 - **Repository:** `https://github.com/51riu5/pay3_assignment1`
 
 ## Why This Stands Out
@@ -12,6 +13,7 @@ A TypeScript-based crypto dashboard that recreates a Figma design using vanilla 
 - Real API integration with resilient error states
 - Live data refresh every 30 seconds
 - Search and watchlist UX with local persistence
+- Extra UX polish: sorting, skeleton loading, retry flow, data freshness state
 - Clean architecture using modular rendering/state functions
 
 ## Features
@@ -28,11 +30,15 @@ A TypeScript-based crypto dashboard that recreates a Figma design using vanilla 
 
 ### Level 2 - Search & Watchlist
 
-- Real-time search filtering by coin name
+- Debounced search filtering by coin name
 - `Add to Watchlist` / `Remove from Watchlist` actions on cards
 - Dedicated watchlist section
 - Watchlist persisted in `localStorage`
 - Watchlist restored on app load
+- Sort options: market cap, price, 24h change, and name
+- Loading skeleton cards during initial fetch
+- Data freshness badge (`Live` / `Aging` / `Stale`)
+- Retry button on API warning state
 
 ### Level 3 - Deployment
 
@@ -50,12 +56,13 @@ A TypeScript-based crypto dashboard that recreates a Figma design using vanilla 
 - `src/main.ts`
   - API fetch + refresh cycle
   - Rendering logic for market and watchlist
-  - Search and watchlist interactions
+  - Search, sorting, and watchlist interactions
+  - Loading and freshness state management
   - Error/warning handling and UI states
 - `src/style.css`
   - Figma-inspired dark theme
   - Responsive layout and component styles
-  - Interaction states (hover/focus/active/error)
+  - Interaction states (hover/focus/active/error/loading)
 
 ## Run Locally
 

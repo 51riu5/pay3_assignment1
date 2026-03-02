@@ -5,9 +5,11 @@ type Coin = {
   symbol: string;
   name: string;
   image: string;
+  market_cap: number;
   current_price: number;
   price_change_percentage_24h: number | null;
 };
+type SortOption = 'market_cap' | 'price_desc' | 'change_desc' | 'name_asc';
 
 const APP_TITLE = 'Crypto Market Overview';
 const STORAGE_KEY = 'crypto-watchlist';
@@ -68,7 +70,19 @@ app.innerHTML = `
             <h2>Market Overview</h2>
             <p class="section-subtitle">Real-time data for top performing assets</p>
           </div>
-          <button id="all-assets-btn" class="primary-chip" type="button">All Assets</button>
+          <div class="market-actions">
+            <label class="sort-wrap">
+              <span>Sort</span>
+              <select id="sort-select">
+                <option value="market_cap">Market Cap</option>
+                <option value="price_desc">Price (High-Low)</option>
+                <option value="change_desc">24h Change (High-Low)</option>
+                <option value="name_asc">Name (A-Z)</option>
+              </select>
+            </label>
+            <span id="freshness-badge" class="freshness-badge">No sync</span>
+            <button id="all-assets-btn" class="primary-chip" type="button">All Assets</button>
+          </div>
         </div>
         <div class="cards-grid" id="market-grid"></div>
       </section>
@@ -80,6 +94,7 @@ app.innerHTML = `
           <div class="warning-text">
             <p id="warning-title" class="warning-title">API Connection Stable</p>
             <p id="warning-message" class="warning-message">Last update pending...</p>
+            <button id="retry-btn" class="warning-retry hidden" type="button">Retry now</button>
           </div>
         </section>
       </footer>
@@ -93,6 +108,8 @@ const watchlistAddSlot = document.querySelector<HTMLButtonElement>('#watchlist-a
 const watchlistEmpty = document.querySelector<HTMLParagraphElement>('#watchlist-empty');
 const searchInput = document.querySelector<HTMLInputElement>('#search-input');
 const searchInputWrap = document.querySelector<HTMLElement>('.search-input-wrap');
+const sortSelect = document.querySelector<HTMLSelectElement>('#sort-select');
+const freshnessBadge = document.querySelector<HTMLSpanElement>('#freshness-badge');
 const marketSection = document.querySelector<HTMLElement>('#market-section');
 const watchlistSection = document.querySelector<HTMLElement>('#watchlist-section');
 const tabMarket = document.querySelector<HTMLAnchorElement>('#tab-market');
@@ -102,6 +119,7 @@ const notifyBtn = document.querySelector<HTMLButtonElement>('#notify-btn');
 const editListLink = document.querySelector<HTMLAnchorElement>('#edit-list-link');
 const allAssetsBtn = document.querySelector<HTMLButtonElement>('#all-assets-btn');
 const viewAllBtn = document.querySelector<HTMLButtonElement>('#view-all-btn');
+const retryBtn = document.querySelector<HTMLButtonElement>('#retry-btn');
 const apiWarning = document.querySelector<HTMLElement>('#api-warning');
 const warningTitle = document.querySelector<HTMLParagraphElement>('#warning-title');
 const warningMessage = document.querySelector<HTMLParagraphElement>('#warning-message');
@@ -113,6 +131,8 @@ if (
   !watchlistEmpty ||
   !searchInput ||
   !searchInputWrap ||
+  !sortSelect ||
+  !freshnessBadge ||
   !marketSection ||
   !watchlistSection ||
   !tabMarket ||
@@ -122,6 +142,7 @@ if (
   !editListLink ||
   !allAssetsBtn ||
   !viewAllBtn ||
+  !retryBtn ||
   !apiWarning ||
   !warningTitle ||
   !warningMessage
@@ -135,6 +156,8 @@ const watchlistAddSlotEl = watchlistAddSlot;
 const watchlistEmptyEl = watchlistEmpty;
 const searchInputEl = searchInput;
 const searchInputWrapEl = searchInputWrap;
+const sortSelectEl = sortSelect;
+const freshnessBadgeEl = freshnessBadge;
 const marketSectionEl = marketSection;
 const watchlistSectionEl = watchlistSection;
 const tabMarketEl = tabMarket;
@@ -144,6 +167,7 @@ const notifyBtnEl = notifyBtn;
 const editListLinkEl = editListLink;
 const allAssetsBtnEl = allAssetsBtn;
 const viewAllBtnEl = viewAllBtn;
+const retryBtnEl = retryBtn;
 const apiWarningEl = apiWarning;
 const warningTitleEl = warningTitle;
 const warningMessageEl = warningMessage;
@@ -151,8 +175,13 @@ const warningMessageEl = warningMessage;
 let allCoins: Coin[] = [];
 let watchlistIds = new Set<string>(readWatchlist());
 let searchTerm = '';
+let sortBy: SortOption = 'market_cap';
 let isEditMode = false;
 let refreshTimer: number | null = null;
+let searchDebounceTimer: number | null = null;
+let freshnessTimer: number | null = null;
+let lastSuccessAt: number | null = null;
+let hasFetchError = false;
 
 function readWatchlist(): string[] {
   try {
@@ -226,18 +255,64 @@ function renderMarket(): void {
   const filtered = allCoins.filter((coin) =>
     coin.name.toLowerCase().includes(searchTerm.toLowerCase().trim()),
   );
+  const sorted = [...filtered];
+  if (sortBy === 'price_desc') {
+    sorted.sort((a, b) => b.current_price - a.current_price);
+  } else if (sortBy === 'change_desc') {
+    sorted.sort((a, b) => (b.price_change_percentage_24h ?? -Infinity) - (a.price_change_percentage_24h ?? -Infinity));
+  } else if (sortBy === 'name_asc') {
+    sorted.sort((a, b) => a.name.localeCompare(b.name));
+  } else {
+    sorted.sort((a, b) => b.market_cap - a.market_cap);
+  }
 
-  if (filtered.length === 0) {
+  if (sorted.length === 0) {
     marketGridEl.innerHTML = `<p class="empty-message">No coins found for "${searchTerm}".</p>`;
     return;
   }
 
-  marketGridEl.innerHTML = filtered.map((coin) => createCoinCard(coin, false)).join('');
+  marketGridEl.innerHTML = sorted.map((coin) => createCoinCard(coin, false)).join('');
 }
 
 function renderAll(): void {
   renderWatchlist();
   renderMarket();
+}
+
+function renderMarketSkeleton(): void {
+  marketGridEl.innerHTML = Array.from({ length: 8 })
+    .map(
+      () => `
+    <article class="coin-card skeleton-card">
+      <div class="skeleton-line skeleton-line-sm"></div>
+      <div class="skeleton-line skeleton-line-md"></div>
+      <div class="skeleton-line skeleton-line-lg"></div>
+      <div class="skeleton-line skeleton-line-sm"></div>
+      <div class="skeleton-line skeleton-line-btn"></div>
+    </article>
+  `,
+    )
+    .join('');
+}
+
+function updateFreshnessBadge(): void {
+  if (!lastSuccessAt) {
+    freshnessBadgeEl.textContent = 'No sync';
+    freshnessBadgeEl.className = 'freshness-badge';
+    return;
+  }
+
+  const ageMs = Date.now() - lastSuccessAt;
+  if (ageMs < 45_000) {
+    freshnessBadgeEl.textContent = 'Live';
+    freshnessBadgeEl.className = 'freshness-badge fresh-live';
+  } else if (ageMs < 90_000) {
+    freshnessBadgeEl.textContent = 'Aging';
+    freshnessBadgeEl.className = 'freshness-badge fresh-aging';
+  } else {
+    freshnessBadgeEl.textContent = 'Stale';
+    freshnessBadgeEl.className = 'freshness-badge fresh-stale';
+  }
 }
 
 function setEditMode(enabled: boolean): void {
@@ -263,18 +338,25 @@ function setActiveTab(tab: 'market' | 'portfolio' | 'exchange'): void {
 }
 
 function setError(message: string): void {
+  hasFetchError = true;
   apiWarningEl.classList.add('warning-error');
   warningTitleEl.textContent = 'API Connection Warning';
   warningMessageEl.textContent = message;
+  retryBtnEl.classList.remove('hidden');
 }
 
 function clearError(): void {
+  hasFetchError = false;
   apiWarningEl.classList.remove('warning-error');
   warningTitleEl.textContent = 'API Connection Stable';
+  retryBtnEl.classList.add('hidden');
 }
 
 async function fetchMarketData(): Promise<void> {
   warningMessageEl.textContent = 'Fetching latest market data...';
+  if (allCoins.length === 0) {
+    renderMarketSkeleton();
+  }
   try {
     const response = await fetch(API_URL);
     if (!response.ok) {
@@ -283,11 +365,14 @@ async function fetchMarketData(): Promise<void> {
 
     const payload = (await response.json()) as Coin[];
     allCoins = payload;
+    lastSuccessAt = Date.now();
     clearError();
     renderAll();
+    updateFreshnessBadge();
     warningMessageEl.textContent = `Last updated at ${new Date().toLocaleTimeString()}. Auto-refresh every 30 seconds.`;
   } catch {
     setError('Real-time prices may be delayed by up to 30 seconds. Checking connection...');
+    updateFreshnessBadge();
   }
 }
 
@@ -303,6 +388,16 @@ function toggleWatchlist(coinId: string): void {
 
 searchInputEl.addEventListener('input', (event) => {
   searchTerm = (event.target as HTMLInputElement).value;
+  if (searchDebounceTimer !== null) {
+    clearTimeout(searchDebounceTimer);
+  }
+  searchDebounceTimer = window.setTimeout(() => {
+    renderMarket();
+  }, 180);
+});
+
+sortSelectEl.addEventListener('change', (event) => {
+  sortBy = (event.target as HTMLSelectElement).value as SortOption;
   renderMarket();
 });
 
@@ -348,12 +443,18 @@ editListLinkEl.addEventListener('click', (event) => {
 allAssetsBtnEl.addEventListener('click', () => {
   searchTerm = '';
   searchInputEl.value = '';
+  sortBy = 'market_cap';
+  sortSelectEl.value = 'market_cap';
   renderMarket();
   warningMessageEl.textContent = 'All assets are now visible.';
 });
 
 viewAllBtnEl.addEventListener('click', () => {
   window.open('https://www.coingecko.com/en/coins', '_blank', 'noopener,noreferrer');
+});
+
+retryBtnEl.addEventListener('click', () => {
+  void fetchMarketData();
 });
 
 app.addEventListener('click', (event) => {
@@ -380,9 +481,20 @@ void fetchMarketData();
 refreshTimer = window.setInterval(() => {
   void fetchMarketData();
 }, REFRESH_INTERVAL_MS);
+freshnessTimer = window.setInterval(() => {
+  if (!hasFetchError) {
+    updateFreshnessBadge();
+  }
+}, 5_000);
 
 window.addEventListener('beforeunload', () => {
   if (refreshTimer !== null) {
     clearInterval(refreshTimer);
+  }
+  if (freshnessTimer !== null) {
+    clearInterval(freshnessTimer);
+  }
+  if (searchDebounceTimer !== null) {
+    clearTimeout(searchDebounceTimer);
   }
 });
