@@ -30,7 +30,7 @@ A placement-ready frontend project that recreates a Figma crypto dashboard with 
 
 ### Level 2 - Search & Watchlist
 
-- Debounced search filtering by coin name
+- Real-Time search filtering by coin name
 - `Add to Watchlist` / `Remove from Watchlist` actions on cards
 - Dedicated watchlist section
 - Watchlist persisted in `localStorage`
