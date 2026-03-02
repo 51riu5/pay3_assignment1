@@ -23,68 +23,100 @@ if (!app) {
 
 app.innerHTML = `
   <main class="page-shell">
-    <header class="top-bar">
-      <div>
-        <p class="eyebrow">${APP_TITLE}</p>
-        <h1>CryptoPulse Market</h1>
-      </div>
-      <p class="refresh-state" id="refresh-state">Loading market data...</p>
-    </header>
+    <p class="page-title">${APP_TITLE}</p>
 
-    <section class="controls-card">
-      <label class="search-group">
-        <span>Search assets</span>
-        <input id="search-input" type="text" placeholder="Search by coin name..." />
-      </label>
-      <button id="refresh-button" class="ghost-btn" type="button">Refresh now</button>
-    </section>
+    <section class="dashboard">
+      <header class="dashboard-nav">
+        <div class="brand-wrap">
+          <p class="brand-logo">B</p>
+          <p class="brand-name">Crypto<span>Pulse</span></p>
+          <nav class="nav-tabs">
+            <a class="tab-link tab-active" href="#">Market</a>
+            <a class="tab-link" href="#">Portfolio</a>
+            <a class="tab-link" href="#">Exchange</a>
+          </nav>
+        </div>
+        <div class="nav-actions">
+          <label class="search-input-wrap">
+            <span class="search-icon">Q</span>
+            <input id="search-input" type="text" placeholder="Search assets..." />
+          </label>
+          <button class="icon-btn" type="button" aria-label="Notifications">!</button>
+          <p class="avatar">JD</p>
+        </div>
+      </header>
 
-    <section class="error-banner hidden" id="error-banner" role="alert"></section>
+      <section class="section-block">
+        <div class="section-head section-head-watch">
+          <div>
+            <h2>My Watchlist</h2>
+            <p class="section-subtitle">Your personalized collection of assets</p>
+          </div>
+          <a class="text-link" href="#">Edit List</a>
+        </div>
+        <div class="cards-grid" id="watchlist-grid"></div>
+        <button id="watchlist-add-slot" class="add-card hidden" type="button">
+          <span class="plus-circle">+</span>
+          <span>Add asset to watchlist</span>
+        </button>
+        <p id="watchlist-empty" class="empty-message hidden">No watchlist coins yet. Add from Market Overview.</p>
+      </section>
 
-    <section class="section-block">
-      <div class="section-head">
-        <h2>My Watchlist</h2>
-      </div>
-      <div class="cards-grid" id="watchlist-grid"></div>
-      <p id="watchlist-empty" class="empty-message">No watchlist coins yet. Add from Market Overview.</p>
-    </section>
+      <section class="section-block">
+        <div class="section-head section-head-market">
+          <div>
+            <h2>Market Overview</h2>
+            <p class="section-subtitle">Real-time data for top performing assets</p>
+          </div>
+          <button class="primary-chip" type="button">All Assets</button>
+        </div>
+        <div class="cards-grid" id="market-grid"></div>
+      </section>
 
-    <section class="section-block">
-      <div class="section-head">
-        <h2>Market Overview</h2>
-      </div>
-      <div class="cards-grid" id="market-grid"></div>
+      <footer class="bottom-row">
+        <button class="outline-pill" type="button">View All Cryptocurrencies</button>
+        <section id="api-warning" class="warning-card" role="alert">
+          <div class="warning-icon">!</div>
+          <div class="warning-text">
+            <p id="warning-title" class="warning-title">API Connection Stable</p>
+            <p id="warning-message" class="warning-message">Last update pending...</p>
+          </div>
+        </section>
+      </footer>
     </section>
   </main>
 `;
 
 const marketGrid = document.querySelector<HTMLDivElement>('#market-grid');
 const watchlistGrid = document.querySelector<HTMLDivElement>('#watchlist-grid');
+const watchlistAddSlot = document.querySelector<HTMLButtonElement>('#watchlist-add-slot');
 const watchlistEmpty = document.querySelector<HTMLParagraphElement>('#watchlist-empty');
 const searchInput = document.querySelector<HTMLInputElement>('#search-input');
-const refreshButton = document.querySelector<HTMLButtonElement>('#refresh-button');
-const refreshState = document.querySelector<HTMLParagraphElement>('#refresh-state');
-const errorBanner = document.querySelector<HTMLElement>('#error-banner');
+const apiWarning = document.querySelector<HTMLElement>('#api-warning');
+const warningTitle = document.querySelector<HTMLParagraphElement>('#warning-title');
+const warningMessage = document.querySelector<HTMLParagraphElement>('#warning-message');
 
 if (
   !marketGrid ||
   !watchlistGrid ||
+  !watchlistAddSlot ||
   !watchlistEmpty ||
   !searchInput ||
-  !refreshButton ||
-  !refreshState ||
-  !errorBanner
+  !apiWarning ||
+  !warningTitle ||
+  !warningMessage
 ) {
   throw new Error('One or more required DOM elements are missing');
 }
 
 const marketGridEl = marketGrid;
 const watchlistGridEl = watchlistGrid;
+const watchlistAddSlotEl = watchlistAddSlot;
 const watchlistEmptyEl = watchlistEmpty;
 const searchInputEl = searchInput;
-const refreshButtonEl = refreshButton;
-const refreshStateEl = refreshState;
-const errorBannerEl = errorBanner;
+const apiWarningEl = apiWarning;
+const warningTitleEl = warningTitle;
+const warningMessageEl = warningMessage;
 
 let allCoins: Coin[] = [];
 let watchlistIds = new Set<string>(readWatchlist());
@@ -134,6 +166,9 @@ function createCoinCard(coin: Coin, isWatchlistSection: boolean): string {
             <p class="coin-symbol">${coin.symbol.toUpperCase()}</p>
           </div>
         </div>
+        <button class="star-btn" data-id="${coin.id}" type="button" aria-label="Toggle watchlist">
+          ${isSelected ? '★' : '☆'}
+        </button>
       </div>
       <p class="coin-price">${formatPrice(coin.current_price)}</p>
       <p class="coin-change ${isPositive ? 'is-up' : 'is-down'}">${formatChange(coin.price_change_percentage_24h)}</p>
@@ -152,7 +187,8 @@ function createCoinCard(coin: Coin, isWatchlistSection: boolean): string {
 function renderWatchlist(): void {
   const watchlistCoins = allCoins.filter((coin) => watchlistIds.has(coin.id));
   watchlistGridEl.innerHTML = watchlistCoins.map((coin) => createCoinCard(coin, true)).join('');
-  watchlistEmptyEl.classList.toggle('hidden', watchlistCoins.length > 0);
+  watchlistEmptyEl.classList.toggle('hidden', watchlistCoins.length !== 0);
+  watchlistAddSlotEl.classList.toggle('hidden', watchlistCoins.length >= 4);
 }
 
 function renderMarket(): void {
@@ -174,17 +210,18 @@ function renderAll(): void {
 }
 
 function setError(message: string): void {
-  errorBannerEl.textContent = message;
-  errorBannerEl.classList.remove('hidden');
+  apiWarningEl.classList.add('warning-error');
+  warningTitleEl.textContent = 'API Connection Warning';
+  warningMessageEl.textContent = message;
 }
 
 function clearError(): void {
-  errorBannerEl.textContent = '';
-  errorBannerEl.classList.add('hidden');
+  apiWarningEl.classList.remove('warning-error');
+  warningTitleEl.textContent = 'API Connection Stable';
 }
 
 async function fetchMarketData(): Promise<void> {
-  refreshStateEl.textContent = 'Refreshing data...';
+  warningMessageEl.textContent = 'Fetching latest market data...';
   try {
     const response = await fetch(API_URL);
     if (!response.ok) {
@@ -195,10 +232,9 @@ async function fetchMarketData(): Promise<void> {
     allCoins = payload;
     clearError();
     renderAll();
-    refreshStateEl.textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
+    warningMessageEl.textContent = `Last updated at ${new Date().toLocaleTimeString()}. Auto-refresh every 30 seconds.`;
   } catch {
-    setError('Failed to fetch market data. Please try again in a few moments.');
-    refreshStateEl.textContent = 'Live data unavailable';
+    setError('Real-time prices may be delayed by up to 30 seconds. Checking connection...');
   }
 }
 
@@ -217,13 +253,9 @@ searchInputEl.addEventListener('input', (event) => {
   renderMarket();
 });
 
-refreshButtonEl.addEventListener('click', () => {
-  void fetchMarketData();
-});
-
 app.addEventListener('click', (event) => {
   const target = event.target as HTMLElement;
-  if (!target.matches('.watch-btn')) {
+  if (!target.matches('.watch-btn, .star-btn')) {
     return;
   }
   const coinId = target.dataset.id;
@@ -231,6 +263,10 @@ app.addEventListener('click', (event) => {
     return;
   }
   toggleWatchlist(coinId);
+});
+
+watchlistAddSlotEl.addEventListener('click', () => {
+  searchInputEl.focus();
 });
 
 void fetchMarketData();
