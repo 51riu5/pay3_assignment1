@@ -1,9 +1,9 @@
-# Crypto Market Overview
+<img width="1917" height="870" alt="image" src="https://github.com/user-attachments/assets/3196993b-97aa-4bb2-bb98-92c840230656" /># Crypto Market Overview
 
 A TypeScript-based crypto dashboard that recreates a Figma design using vanilla DOM APIs and custom CSS, powered by live market data from CoinGecko.
 ## Live Links
 
-- **Deployed App:** `https://pay3-a0h6khzyr-rishits-projects-95675e60.vercel.app/`
+- **Deployed App:** `https://pay3-mauve.vercel.app/`
 - **Repository:** `https://github.com/51riu5/pay3_assignment1`
 
 ## Why This Stands Out
