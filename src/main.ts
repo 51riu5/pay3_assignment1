@@ -92,6 +92,7 @@ const watchlistGrid = document.querySelector<HTMLDivElement>('#watchlist-grid');
 const watchlistAddSlot = document.querySelector<HTMLButtonElement>('#watchlist-add-slot');
 const watchlistEmpty = document.querySelector<HTMLParagraphElement>('#watchlist-empty');
 const searchInput = document.querySelector<HTMLInputElement>('#search-input');
+const searchInputWrap = document.querySelector<HTMLElement>('.search-input-wrap');
 const marketSection = document.querySelector<HTMLElement>('#market-section');
 const watchlistSection = document.querySelector<HTMLElement>('#watchlist-section');
 const tabMarket = document.querySelector<HTMLAnchorElement>('#tab-market');
@@ -111,6 +112,7 @@ if (
   !watchlistAddSlot ||
   !watchlistEmpty ||
   !searchInput ||
+  !searchInputWrap ||
   !marketSection ||
   !watchlistSection ||
   !tabMarket ||
@@ -132,6 +134,7 @@ const watchlistGridEl = watchlistGrid;
 const watchlistAddSlotEl = watchlistAddSlot;
 const watchlistEmptyEl = watchlistEmpty;
 const searchInputEl = searchInput;
+const searchInputWrapEl = searchInputWrap;
 const marketSectionEl = marketSection;
 const watchlistSectionEl = watchlistSection;
 const tabMarketEl = tabMarket;
@@ -148,6 +151,7 @@ const warningMessageEl = warningMessage;
 let allCoins: Coin[] = [];
 let watchlistIds = new Set<string>(readWatchlist());
 let searchTerm = '';
+let isEditMode = false;
 let refreshTimer: number | null = null;
 
 function readWatchlist(): string[] {
@@ -236,6 +240,22 @@ function renderAll(): void {
   renderMarket();
 }
 
+function setEditMode(enabled: boolean): void {
+  isEditMode = enabled;
+  watchlistSectionEl.classList.toggle('is-editing', enabled);
+  editListLinkEl.textContent = enabled ? 'Done' : 'Edit List';
+  warningMessageEl.textContent = enabled
+    ? 'Edit mode enabled: use stars or buttons to update your watchlist.'
+    : 'Edit mode disabled.';
+}
+
+function flashSearchFocus(): void {
+  searchInputWrapEl.classList.add('search-focus-flash');
+  setTimeout(() => {
+    searchInputWrapEl.classList.remove('search-focus-flash');
+  }, 900);
+}
+
 function setActiveTab(tab: 'market' | 'portfolio' | 'exchange'): void {
   tabMarketEl.classList.toggle('tab-active', tab === 'market');
   tabPortfolioEl.classList.toggle('tab-active', tab === 'portfolio');
@@ -311,11 +331,17 @@ notifyBtnEl.addEventListener('click', () => {
 
 editListLinkEl.addEventListener('click', (event) => {
   event.preventDefault();
-  const firstWatchControl = watchlistGridEl.querySelector<HTMLButtonElement>('.watch-btn, .star-btn');
-  if (firstWatchControl) {
-    firstWatchControl.focus();
-  } else {
+  const hasWatchlistCoins = watchlistIds.size > 0;
+  if (!hasWatchlistCoins) {
+    setEditMode(false);
+    warningMessageEl.textContent = 'Your watchlist is empty. Add coins first from Market Overview.';
+    setActiveTab('market');
+    marketSectionEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
     searchInputEl.focus();
+    flashSearchFocus();
+    return;
+  } else {
+    setEditMode(!isEditMode);
   }
 });
 
@@ -343,7 +369,11 @@ app.addEventListener('click', (event) => {
 });
 
 watchlistAddSlotEl.addEventListener('click', () => {
+  setActiveTab('market');
+  marketSectionEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  warningMessageEl.textContent = 'Search and click "Add to Watchlist" on any coin to include it above.';
   searchInputEl.focus();
+  flashSearchFocus();
 });
 
 void fetchMarketData();

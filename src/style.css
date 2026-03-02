@@ -129,6 +129,11 @@ body {
   outline: none;
 }
 
+.search-focus-flash {
+  border-color: #2d85ff;
+  box-shadow: 0 0 0 2px rgba(45, 133, 255, 0.35);
+}
+
 .icon-btn {
   width: 30px;
   height: 30px;
@@ -177,6 +182,13 @@ p {
 
 .section-head-watch {
   margin-top: 20px;
+}
+
+.is-editing .section-head-watch {
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(50, 133, 255, 0.5);
+  background: rgba(24, 59, 126, 0.25);
 }
 
 h2 {
