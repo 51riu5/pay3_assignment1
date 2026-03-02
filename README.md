@@ -1,4 +1,4 @@
-<img width="1917" height="870" alt="image" src="https://github.com/user-attachments/assets/3196993b-97aa-4bb2-bb98-92c840230656" /># Crypto Market Overview
+# Crypto Market Overview
 
 A TypeScript-based crypto dashboard that recreates a Figma design using vanilla DOM APIs and custom CSS, powered by live market data from CoinGecko.
 ## Live Links
