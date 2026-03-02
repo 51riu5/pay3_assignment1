@@ -80,10 +80,4 @@ This app can be deployed to Vercel, Netlify, or GitHub Pages.
 2. Build command: `npm run build`
 3. Publish directory: `dist`
 
-## Submission Checklist
-
-- [x] GitHub repository
-- [ ] Deployed link
-- [x] README with architecture explanation
-
 > Add your deployed URL to this README once deployed.
