@@ -31,9 +31,9 @@ app.innerHTML = `
           <p class="brand-logo">B</p>
           <p class="brand-name">Crypto<span>Pulse</span></p>
           <nav class="nav-tabs">
-            <a class="tab-link tab-active" href="#">Market</a>
-            <a class="tab-link" href="#">Portfolio</a>
-            <a class="tab-link" href="#">Exchange</a>
+            <a id="tab-market" class="tab-link tab-active" href="#">Market</a>
+            <a id="tab-portfolio" class="tab-link" href="#">Portfolio</a>
+            <a id="tab-exchange" class="tab-link" href="#">Exchange</a>
           </nav>
         </div>
         <div class="nav-actions">
@@ -41,18 +41,18 @@ app.innerHTML = `
             <span class="search-icon">Q</span>
             <input id="search-input" type="text" placeholder="Search assets..." />
           </label>
-          <button class="icon-btn" type="button" aria-label="Notifications">!</button>
+          <button id="notify-btn" class="icon-btn" type="button" aria-label="Notifications">!</button>
           <p class="avatar">JD</p>
         </div>
       </header>
 
-      <section class="section-block">
+      <section id="watchlist-section" class="section-block">
         <div class="section-head section-head-watch">
           <div>
             <h2>My Watchlist</h2>
             <p class="section-subtitle">Your personalized collection of assets</p>
           </div>
-          <a class="text-link" href="#">Edit List</a>
+          <a id="edit-list-link" class="text-link" href="#">Edit List</a>
         </div>
         <div class="cards-grid" id="watchlist-grid"></div>
         <button id="watchlist-add-slot" class="add-card hidden" type="button">
@@ -62,19 +62,19 @@ app.innerHTML = `
         <p id="watchlist-empty" class="empty-message hidden">No watchlist coins yet. Add from Market Overview.</p>
       </section>
 
-      <section class="section-block">
+      <section id="market-section" class="section-block">
         <div class="section-head section-head-market">
           <div>
             <h2>Market Overview</h2>
             <p class="section-subtitle">Real-time data for top performing assets</p>
           </div>
-          <button class="primary-chip" type="button">All Assets</button>
+          <button id="all-assets-btn" class="primary-chip" type="button">All Assets</button>
         </div>
         <div class="cards-grid" id="market-grid"></div>
       </section>
 
       <footer class="bottom-row">
-        <button class="outline-pill" type="button">View All Cryptocurrencies</button>
+        <button id="view-all-btn" class="outline-pill" type="button">View All Cryptocurrencies</button>
         <section id="api-warning" class="warning-card" role="alert">
           <div class="warning-icon">!</div>
           <div class="warning-text">
@@ -92,6 +92,15 @@ const watchlistGrid = document.querySelector<HTMLDivElement>('#watchlist-grid');
 const watchlistAddSlot = document.querySelector<HTMLButtonElement>('#watchlist-add-slot');
 const watchlistEmpty = document.querySelector<HTMLParagraphElement>('#watchlist-empty');
 const searchInput = document.querySelector<HTMLInputElement>('#search-input');
+const marketSection = document.querySelector<HTMLElement>('#market-section');
+const watchlistSection = document.querySelector<HTMLElement>('#watchlist-section');
+const tabMarket = document.querySelector<HTMLAnchorElement>('#tab-market');
+const tabPortfolio = document.querySelector<HTMLAnchorElement>('#tab-portfolio');
+const tabExchange = document.querySelector<HTMLAnchorElement>('#tab-exchange');
+const notifyBtn = document.querySelector<HTMLButtonElement>('#notify-btn');
+const editListLink = document.querySelector<HTMLAnchorElement>('#edit-list-link');
+const allAssetsBtn = document.querySelector<HTMLButtonElement>('#all-assets-btn');
+const viewAllBtn = document.querySelector<HTMLButtonElement>('#view-all-btn');
 const apiWarning = document.querySelector<HTMLElement>('#api-warning');
 const warningTitle = document.querySelector<HTMLParagraphElement>('#warning-title');
 const warningMessage = document.querySelector<HTMLParagraphElement>('#warning-message');
@@ -102,6 +111,15 @@ if (
   !watchlistAddSlot ||
   !watchlistEmpty ||
   !searchInput ||
+  !marketSection ||
+  !watchlistSection ||
+  !tabMarket ||
+  !tabPortfolio ||
+  !tabExchange ||
+  !notifyBtn ||
+  !editListLink ||
+  !allAssetsBtn ||
+  !viewAllBtn ||
   !apiWarning ||
   !warningTitle ||
   !warningMessage
@@ -114,6 +132,15 @@ const watchlistGridEl = watchlistGrid;
 const watchlistAddSlotEl = watchlistAddSlot;
 const watchlistEmptyEl = watchlistEmpty;
 const searchInputEl = searchInput;
+const marketSectionEl = marketSection;
+const watchlistSectionEl = watchlistSection;
+const tabMarketEl = tabMarket;
+const tabPortfolioEl = tabPortfolio;
+const tabExchangeEl = tabExchange;
+const notifyBtnEl = notifyBtn;
+const editListLinkEl = editListLink;
+const allAssetsBtnEl = allAssetsBtn;
+const viewAllBtnEl = viewAllBtn;
 const apiWarningEl = apiWarning;
 const warningTitleEl = warningTitle;
 const warningMessageEl = warningMessage;
@@ -209,6 +236,12 @@ function renderAll(): void {
   renderMarket();
 }
 
+function setActiveTab(tab: 'market' | 'portfolio' | 'exchange'): void {
+  tabMarketEl.classList.toggle('tab-active', tab === 'market');
+  tabPortfolioEl.classList.toggle('tab-active', tab === 'portfolio');
+  tabExchangeEl.classList.toggle('tab-active', tab === 'exchange');
+}
+
 function setError(message: string): void {
   apiWarningEl.classList.add('warning-error');
   warningTitleEl.textContent = 'API Connection Warning';
@@ -251,6 +284,50 @@ function toggleWatchlist(coinId: string): void {
 searchInputEl.addEventListener('input', (event) => {
   searchTerm = (event.target as HTMLInputElement).value;
   renderMarket();
+});
+
+tabMarketEl.addEventListener('click', (event) => {
+  event.preventDefault();
+  setActiveTab('market');
+  marketSectionEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+
+tabPortfolioEl.addEventListener('click', (event) => {
+  event.preventDefault();
+  setActiveTab('portfolio');
+  watchlistSectionEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  warningMessageEl.textContent = 'Portfolio view is not in Level 1/2, showing your watchlist instead.';
+});
+
+tabExchangeEl.addEventListener('click', (event) => {
+  event.preventDefault();
+  setActiveTab('exchange');
+  warningMessageEl.textContent = 'Exchange module is not part of this assignment scope yet.';
+});
+
+notifyBtnEl.addEventListener('click', () => {
+  void fetchMarketData();
+});
+
+editListLinkEl.addEventListener('click', (event) => {
+  event.preventDefault();
+  const firstWatchControl = watchlistGridEl.querySelector<HTMLButtonElement>('.watch-btn, .star-btn');
+  if (firstWatchControl) {
+    firstWatchControl.focus();
+  } else {
+    searchInputEl.focus();
+  }
+});
+
+allAssetsBtnEl.addEventListener('click', () => {
+  searchTerm = '';
+  searchInputEl.value = '';
+  renderMarket();
+  warningMessageEl.textContent = 'All assets are now visible.';
+});
+
+viewAllBtnEl.addEventListener('click', () => {
+  window.open('https://www.coingecko.com/en/coins', '_blank', 'noopener,noreferrer');
 });
 
 app.addEventListener('click', (event) => {
